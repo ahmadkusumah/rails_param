@@ -21,7 +21,7 @@ module RailsParam
         params[name] = coerce(params[name], type, options)
         params[name] = (options[:default].call if options[:default].respond_to?(:call)) || options[:default] if params[name].nil? and check_param_presence?(options[:default])
         params[name] = options[:transform].to_proc.call(params[name]) if params[name] and options[:transform]
-        validate!(params[name], options)
+        validate!(params[name], options, name)
 
         if block_given?
           if type == Array
@@ -82,13 +82,13 @@ module RailsParam
       end
     end
 
-    def validate!(param, options)
+    def validate!(param, options, name)
       options.each do |key, value|
         case key
           when :required
-            raise InvalidParameterError, "Parameter #{param} is required " if value && param.nil?
+            raise InvalidParameterError, "Parameter #{name} is required " if value && param.nil?
           when :blank
-            raise InvalidParameterError, "Parameter #{param} cannot be blank" if !value && case param
+            raise InvalidParameterError, "Parameter #{name} cannot be blank" if !value && case param
                                                                                     when String
                                                                                       !(/\S/ === param)
                                                                                     when Array, Hash
@@ -97,25 +97,25 @@ module RailsParam
                                                                                       param.nil?
                                                                                   end
           when :format
-            raise InvalidParameterError, "Parameter #{param} must be a string if using the format validation" unless param.kind_of?(String)
-            raise InvalidParameterError, "Parameter #{param} must match format #{value}" unless param =~ value
+            raise InvalidParameterError, "Parameter #{name} must be a string if using the format validation" unless param.kind_of?(String)
+            raise InvalidParameterError, "Parameter #{name} must match format #{value}" unless param =~ value
           when :is
-            raise InvalidParameterError, "Parameter #{param} must be #{value}" unless param === value
+            raise InvalidParameterError, "Parameter #{name} must be #{value}" unless param === value
           when :in, :within, :range
-            raise InvalidParameterError, "Parameter #{param} must be within #{value}" unless param.nil? || case value
+            raise InvalidParameterError, "Parameter #{name} must be within #{value}" unless param.nil? || case value
                                                                                                     when Range
                                                                                                       value.include?(param)
                                                                                                     else
                                                                                                       Array(value).include?(param)
                                                                                                   end
           when :min
-            raise InvalidParameterError, "Parameter #{param} cannot be less than #{value}" unless param.nil? || value <= param
+            raise InvalidParameterError, "Parameter #{name} cannot be less than #{value}" unless param.nil? || value <= param
           when :max
-            raise InvalidParameterError, "Parameter #{param} cannot be greater than #{value}" unless param.nil? || value >= param
+            raise InvalidParameterError, "Parameter #{name} cannot be greater than #{value}" unless param.nil? || value >= param
           when :min_length
-            raise InvalidParameterError, "Parameter #{param} cannot have length less than #{value}" unless param.nil? || value <= param.length
+            raise InvalidParameterError, "Parameter #{name} cannot have length less than #{value}" unless param.nil? || value <= param.length
           when :max_length
-            raise InvalidParameterError, "Parameter #{param} cannot have length greater than #{value}" unless param.nil? || value >= param.length
+            raise InvalidParameterError, "Parameter #{name} cannot have length greater than #{value}" unless param.nil? || value >= param.length
         end
       end
     end
